@@ -13,7 +13,7 @@ updates:
     labels:
       - "dependencies"
 
-  - package-ecosystem: "docker"
+- package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -24,6 +24,11 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+    ignore:
+      # Only allow minor and patch updates for Node base image.
+      # Major bumps (e.g. 24 -> 26) need manual review against LTS schedule.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
