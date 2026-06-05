@@ -51,3 +51,18 @@ För att rulla ut till produktion:
 5. git push origin production → Coolify auto-deployar
 6. Verifiera login fortfarande funkar
 7. Uppdatera DEPLOYMENT.md med ny commit + datum
+
+## Dependency policy decisions
+
+### Node.js base image
+
+Pin to active LTS only. Currently node:24.x-alpine.
+
+- Major bumps (e.g. 24 → 26) blocked in dependabot.yml via `ignore` rule
+- Reasoning: Node 26 entered Current in 2026-04; LTS in 2026-10
+- A SPOF auth service should not run non-LTS Node
+- Revisit when Node 28 enters Active LTS (April 2027), or sooner if security
+  requires bumping out of 24.x line
+
+History:
+- 2026-06-05: Dependabot PR #1 (node 24→26) declined, ignore rule added
