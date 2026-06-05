@@ -1,4 +1,3 @@
-cat > .github/dependabot.yml << 'EOF'
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -31,4 +30,3 @@ updates:
     schedule:
       interval: "monthly"
     target-branch: "main"
-EOF
