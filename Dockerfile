@@ -52,6 +52,7 @@ USER node
 COPY --from=builder /build-stage/app.js ./app.js
 COPY --from=builder /build-stage/middleware ./middleware
 COPY --from=builder /build-stage/node_modules ./node_modules
+COPY --from=builder /build-stage/instrument.js ./instrument.js
 
 EXPOSE 3000
 
