@@ -14,3 +14,5 @@ upstream changes.
 | Date       | Commit  | Tag       | Notes                        |
 |------------|---------|-----------|------------------------------|
 | 2026-06-05 | 9925332 | v2026.6.0 | Initial production deploy    |
+| 2026-06-08 | <merge-hash> | —         | Add Sentry/GlitchTip error reporting (step 7) |
+| 2026-06-08 | <merge-hash> | —         | Remove Sentry verification endpoint           |
