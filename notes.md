@@ -1,45 +1,68 @@
-# Notes — temporary
 
-Detta är arbetsanteckningar inför Steg 5 (formell ADR i site-factory).
-Flyttas dit när ADR:n skrivs.
+## Secrets management
 
-## Authenticator
+### Vad finns var
 
-- Repo: visionmediahq/cms-authenticator (fork av inclusive-design/idrc-cms-authenticator)
-- Production-deploy från `production`-branch
-- Initial deploy: commit 9925332, tag v2026.6.0, 2026-06-05
-- Coolify-app pekar mot production-branch, auto-deploy via Coolifys GitHub App
+| Secret | Lagras i | Används till |
+|---|---|---|
+| OAUTH_CLIENT_ID | Coolify env (cms-authenticator-app) | Sänds till GitHub i auth-flödet |
+| OAUTH_CLIENT_SECRET | Coolify env (cms-authenticator-app) | Byter code mot token i /callback |
 
-## OAuth App
+### Vad som ALDRIG ska finnas
 
-- Namn: "Vision Media CMS"
-- Ägare: visionmediahq-orgen
-- Client ID: Ov23liwbSqfmOLu0HTqf
-- Inställningar: github.com/organizations/visionmediahq/settings/applications
-- Callback URL: https://auth.vmedia.se/callback
-- Device Flow: AV
+- I klient-repon (visionmediahq/hugofinspang, etc.)
+- I site-factory-repot eller dess .env
+- I lokala .env-filer på utvecklarmaskiner
+- Committed i Git på något ställe
 
-## Secrets
+Klientsajterna känner endast till `base_url: https://auth.vmedia.se` — det räcker.
+Authenticator-appen är enda platsen som behöver veta secret:en.
 
-- OAUTH_CLIENT_SECRET: endast i Coolify (cms-authenticator app, env)
-- OAUTH_CLIENT_ID: endast i Coolify (samma)
-- Roteras manuellt — generera nytt secret i OAuth App-inställningarna,
-  uppdatera env i Coolify, restarta app
+### Rotering av Client Secret
 
-## Allowed domains
+Procedure (när någon lämnar bolaget, vid misstänkt läcka, eller var 12:e månad):
 
-- ALLOWED_DOMAINS=*.vmedia.se (en rad, täcker alla framtida sajter)
-- CMS-admin alltid på {slug}.vmedia.se/admin, oavsett kundens publika domän
+1. github.com/organizations/visionmediahq/settings/applications → Vision Media CMS
+2. "Generate a new client secret" → kopiera direkt (visas bara en gång)
+3. Coolify → cms-authenticator-app → Environment Variables
+4. Uppdatera OAUTH_CLIENT_SECRET → Save → Restart
+5. Vänta ~30 sek tills appen är igång
+6. Verifiera login på hugofinspang.vmedia.se/admin
+7. På GitHub OAuth App: ta bort den gamla secret:en (Active → Delete)
 
-## Endpoints
+### Dependabot
 
-- https://auth.vmedia.se/auth     — login start
-- https://auth.vmedia.se/callback — GitHub OAuth callback
-- https://auth.vmedia.se/         — 404 (medveten — ingen landing page)
+Aktiverat på visionmediahq/cms-authenticator (.github/dependabot.yml).
 
-## Att göra (kvarvarande steg)
+Hanterar:
+- npm dependencies (veckovis, måndag)
+- Docker base image (veckovis, måndag)
+- GitHub Actions (månadsvis)
 
-- [ ] Steg 4: Dependabot på forken
-- [ ] Steg 5: ADR i site-factory + base_url i astro-starter
-- [ ] Steg 6: Kund-onboarding-rutin
-- [ ] Steg 7: Uptime Kuma + GlitchTip för auth.vmedia.se
+Plus säkerhetsuppdateringar (omedelbart vid CVE) via Dependabot security updates.
+
+PR:er går till `main`-branchen, INTE `production`.
+
+För att rulla ut till produktion:
+1. Merga Dependabot-PR till main
+2. Verifiera att Coolify INTE auto-deployar (production-branchen rörs inte)
+3. Lokalt: git checkout production && git merge main
+4. Granska diff — finns något brytande?
+5. git push origin production → Coolify auto-deployar
+6. Verifiera login fortfarande funkar
+7. Uppdatera DEPLOYMENT.md med ny commit + datum
+
+## Dependency policy decisions
+
+### Node.js base image
+
+Pin to active LTS only. Currently node:24.x-alpine.
+
+- Major bumps (e.g. 24 → 26) blocked in dependabot.yml via `ignore` rule
+- Reasoning: Node 26 entered Current in 2026-04; LTS in 2026-10
+- A SPOF auth service should not run non-LTS Node
+- Revisit when Node 28 enters Active LTS (April 2027), or sooner if security
+  requires bumping out of 24.x line
+
+History:
+- 2026-06-05: Dependabot PR #1 (node 24→26) declined, ignore rule added
