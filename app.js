@@ -24,6 +24,12 @@ app.get('/', (_request, response) => {
 app.get('/auth', middleware.auth);
 app.get('/callback', middleware.callback);
 
+// TODO: temporary debug endpoint to verify Sentry/GlitchTip integration —
+// remove after first event verified in GlitchTip dashboard
+app.get('/debug/sentry-test', (request, response) => {
+  throw new Error('Sentry integration test from auth.vmedia.se');
+});
+
 // Sentry error handler — måste registreras EFTER routes men FÖRE övriga
 // error handlers. Fångar oväntade exceptions i request-pipelinen.
 Sentry.setupExpressErrorHandler(app);
